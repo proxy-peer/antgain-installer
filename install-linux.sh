@@ -2,7 +2,10 @@
 set -e
 
 # AntGain Linux Installation Script
-# Usage: curl -fsSL https://gist.githubusercontent.com/.../install-linux.sh | sudo bash
+# Usage: 
+#   curl -fsSL https://... | sudo bash
+#   curl -fsSL https://... | sudo bash -s 1.0.23
+#   curl -fsSL https://... | sudo VERSION=1.0.23 bash
 
 echo "🚀 AntGain Linux Installer"
 echo "================================"
@@ -10,6 +13,13 @@ echo "================================"
 # Configuration - modify for your repository
 GITHUB_USER="${GITHUB_USER:-proxy-peer}"
 GITHUB_REPO="${GITHUB_REPO:-antgain}"
+
+# Get version from argument or environment variable
+if [ -n "$1" ]; then
+    VERSION="$1"
+elif [ -z "$VERSION" ]; then
+    VERSION=""
+fi
 
 # Detect architecture
 ARCH=$(uname -m)
@@ -39,10 +49,11 @@ else
     if [ -z "$RELEASE_DATA" ]; then
         echo "❌ Unable to access release information"
         echo ""
-        echo "For private repositories, please specify version manually:"
-        echo "  VERSION=1.0.23 curl -fsSL ... | sudo bash"
+        echo "For private repositories, specify version:"
+        echo "  curl -fsSL ... | sudo bash -s 1.0.23"
+        echo "  curl -fsSL ... | sudo VERSION=1.0.23 bash"
         echo ""
-        echo "Or download the latest release from:"
+        echo "Or download manually from:"
         echo "  https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases"
         exit 1
     fi
