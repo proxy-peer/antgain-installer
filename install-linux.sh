@@ -8,7 +8,7 @@ echo "🚀 AntGain Linux Installer"
 echo "================================"
 
 # Configuration - modify for your repository
-GITHUB_USER="${GITHUB_USER:-guojianlong}"
+GITHUB_USER="${GITHUB_USER:-proxy-peer}"
 GITHUB_REPO="${GITHUB_REPO:-antgain}"
 
 # Detect architecture
