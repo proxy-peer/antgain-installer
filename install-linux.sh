@@ -55,7 +55,7 @@ else
     fi
     
     # Extract version number
-    VERSION=$(echo "$VERSION_DATA" | grep -o '"version":"[^"]*' | head -1 | cut -d'"' -f4)
+    VERSION=$(echo "$VERSION_DATA" | grep -o '"version" *: *"[^"]*"' | cut -d'"' -f4)
     
     if [ -z "$VERSION" ]; then
         echo "❌ Error: Unable to parse version information"
