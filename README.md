@@ -4,18 +4,14 @@ One-line installation script for AntGain Linux.
 
 ## Quick Install
 
-**For public repositories:**
+**Auto-install latest version:**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/proxy-peer/antgain-installer/main/install-linux.sh | sudo bash
 ```
 
-**For private repositories** (specify version):
+**Install specific version:**
 ```bash
-# Method 1: Pass as argument
 curl -fsSL https://raw.githubusercontent.com/proxy-peer/antgain-installer/main/install-linux.sh | sudo bash -s 1.0.23
-
-# Method 2: Environment variable
-curl -fsSL https://raw.githubusercontent.com/proxy-peer/antgain-installer/main/install-linux.sh | sudo VERSION=1.0.23 bash
 ```
 
 ## What it does

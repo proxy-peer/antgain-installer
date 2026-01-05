@@ -10,9 +10,8 @@ set -e
 echo "🚀 AntGain Linux Installer"
 echo "================================"
 
-# Configuration - modify for your repository
-GITHUB_USER="${GITHUB_USER:-proxy-peer}"
-GITHUB_REPO="${GITHUB_REPO:-antgain}"
+# Configuration
+R2_BASE_URL="${R2_BASE_URL:-https://pub-a6321dc4515447b698de8db2567150ff.r2.dev}"
 
 # Get version from argument or environment variable
 if [ -n "$1" ]; then
@@ -39,30 +38,25 @@ if [ -n "$VERSION" ]; then
     # Use manually specified version
     echo "📦 Using specified version: v$VERSION"
 else
-    # Try to get latest version from GitHub API
+    # Get latest version from R2
     echo "📡 Fetching latest version..."
-    GITHUB_API="https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases/latest"
+    LATEST_JSON="${R2_BASE_URL}/latest.json"
     
-    # Note: GitHub private repository releases can be set to public
-    RELEASE_DATA=$(curl -fsSL "$GITHUB_API" 2>/dev/null || echo "")
+    VERSION_DATA=$(curl -fsSL "$LATEST_JSON" 2>/dev/null || echo "")
     
-    if [ -z "$RELEASE_DATA" ]; then
-        echo "❌ Unable to access release information"
+    if [ -z "$VERSION_DATA" ]; then
+        echo "❌ Unable to fetch version information"
         echo ""
-        echo "For private repositories, specify version:"
+        echo "Please specify version manually:"
         echo "  curl -fsSL ... | sudo bash -s 1.0.23"
-        echo "  curl -fsSL ... | sudo VERSION=1.0.23 bash"
-        echo ""
-        echo "Or download manually from:"
-        echo "  https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases"
         exit 1
     fi
     
     # Extract version number
-    VERSION=$(echo "$RELEASE_DATA" | grep -o '"tag_name": *"[^"]*"' | head -1 | cut -d'"' -f4 | sed 's/^v//')
+    VERSION=$(echo "$VERSION_DATA" | grep -o '"version":"[^"]*' | head -1 | cut -d'"' -f4)
     
     if [ -z "$VERSION" ]; then
-        echo "❌ Error: Unable to get version information"
+        echo "❌ Error: Unable to parse version information"
         exit 1
     fi
     
@@ -71,7 +65,7 @@ fi
 
 # Build download URL
 DEB_FILENAME="AntGain_${VERSION}_linux-x86_64.deb"
-DEB_URL="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases/download/v${VERSION}/${DEB_FILENAME}"
+DEB_URL="${R2_BASE_URL}/releases/${VERSION}/${DEB_FILENAME}"
 
 echo "📥 Download URL: $DEB_URL"
 
