@@ -24,37 +24,43 @@ if ! command -v apt-get &> /dev/null; then
     exit 1
 fi
 
-# Get latest version
-echo "📡 Fetching latest version..."
-GITHUB_API="https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases/latest"
-
-# Note: GitHub private repository releases can be set to public
-RELEASE_DATA=$(curl -fsSL "$GITHUB_API" 2>/dev/null || echo "")
-
-if [ -z "$RELEASE_DATA" ]; then
-    echo "❌ Unable to access release information"
-    echo "Tip: Make sure GitHub Release is public"
-    exit 1
+# Get version
+if [ -n "$VERSION" ]; then
+    # Use manually specified version
+    echo "📦 Using specified version: v$VERSION"
+else
+    # Try to get latest version from GitHub API
+    echo "📡 Fetching latest version..."
+    GITHUB_API="https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases/latest"
+    
+    # Note: GitHub private repository releases can be set to public
+    RELEASE_DATA=$(curl -fsSL "$GITHUB_API" 2>/dev/null || echo "")
+    
+    if [ -z "$RELEASE_DATA" ]; then
+        echo "❌ Unable to access release information"
+        echo ""
+        echo "For private repositories, please specify version manually:"
+        echo "  VERSION=1.0.23 curl -fsSL ... | sudo bash"
+        echo ""
+        echo "Or download the latest release from:"
+        echo "  https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases"
+        exit 1
+    fi
+    
+    # Extract version number
+    VERSION=$(echo "$RELEASE_DATA" | grep -o '"tag_name": *"[^"]*"' | head -1 | cut -d'"' -f4 | sed 's/^v//')
+    
+    if [ -z "$VERSION" ]; then
+        echo "❌ Error: Unable to get version information"
+        exit 1
+    fi
+    
+    echo "📦 Latest version: v$VERSION"
 fi
 
-# Extract version number
-VERSION=$(echo "$RELEASE_DATA" | grep -o '"tag_name": *"[^"]*"' | head -1 | cut -d'"' -f4 | sed 's/^v//')
-
-if [ -z "$VERSION" ]; then
-    echo "❌ Error: Unable to get version information"
-    exit 1
-fi
-
-echo "📦 Latest version: v$VERSION"
-
-# Extract deb download URL
+# Build download URL
 DEB_FILENAME="AntGain_${VERSION}_linux-x86_64.deb"
-DEB_URL=$(echo "$RELEASE_DATA" | grep -o '"browser_download_url": *"[^"]*'"$DEB_FILENAME"'"' | cut -d'"' -f4)
-
-if [ -z "$DEB_URL" ]; then
-    echo "❌ Package not found: $DEB_FILENAME"
-    exit 1
-fi
+DEB_URL="https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases/download/v${VERSION}/${DEB_FILENAME}"
 
 echo "📥 Download URL: $DEB_URL"
 
