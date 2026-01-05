@@ -45,10 +45,12 @@ else
     VERSION_DATA=$(curl -fsSL "$LATEST_JSON" 2>/dev/null || echo "")
     
     if [ -z "$VERSION_DATA" ]; then
-        echo "❌ Unable to fetch version information"
+        echo "❌ Unable to fetch latest version from R2"
         echo ""
-        echo "Please specify version manually:"
+        echo "You can specify version manually to bypass version check:"
         echo "  curl -fsSL ... | sudo bash -s 1.0.23"
+        echo ""
+        echo "Or check network connection and try again."
         exit 1
     fi
     
