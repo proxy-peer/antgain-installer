@@ -21,7 +21,7 @@ if ! command -v antgain &> /dev/null; then
     echo "❌ antgain is not installed"
     echo ""
     echo "Install it first:"
-    echo "  curl -fsSL https://raw.githubusercontent.com/proxy-peer/antgain-installer/main/install-cli-service.sh | bash"
+    echo "  curl -fsSL https://raw.githubusercontent.com/proxy-peer/antgain-installer/main/install-cli.sh | bash"
     exit 1
 fi
 

@@ -24,7 +24,7 @@ curl -fsSL https://raw.githubusercontent.com/proxy-peer/antgain-installer/main/i
 
 ## CLI Installation
 
-### Quick Install
+### Quick Install (通用脚本)
 
 **Auto-install latest CLI version:**
 ```bash
@@ -33,7 +33,19 @@ curl -fsSL https://raw.githubusercontent.com/proxy-peer/antgain-installer/main/i
 
 **Install specific CLI version:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/proxy-peer/antgain-installer/main/install-cli.sh | bash -s 1.0.0
+curl -fsSL https://raw.githubusercontent.com/proxy-peer/antgain-installer/main/install-cli.sh | bash -s 1.0.24
+```
+
+### DEB Package Install (Debian/Ubuntu)
+
+**Auto-install latest CLI version:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/proxy-peer/antgain-installer/main/install-cli-deb.sh | sudo bash
+```
+
+**Install specific CLI version:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/proxy-peer/antgain-installer/main/install-cli-deb.sh | sudo bash -s 1.0.24
 ```
 
 ### Install as Systemd Service
@@ -70,12 +82,19 @@ wget https://github.com/proxy-peer/antgain/releases/latest/download/AntGain_*_li
 sudo apt install ./AntGain_*_linux-x86_64.deb
 ```
 
-### CLI
+### CLI (通用二进制)
 ```bash
 # Linux x86_64
-wget https://pub-xxx.r2.dev/cli/releases/1.0.0/antgain-linux-amd64.tar.gz
+wget https://pub-a6321dc4515447b698de8db2567150ff.r2.dev/cli/releases/1.0.24/antgain-linux-amd64.tar.gz
 tar xzf antgain-linux-amd64.tar.gz
 sudo mv antgain /usr/local/bin/
+```
+
+### CLI (DEB 包)
+```bash
+# Debian/Ubuntu x86_64
+wget https://pub-a6321dc4515447b698de8db2567150ff.r2.dev/cli/releases/1.0.24/antgain-cli_1.0.24-1_amd64.deb
+sudo apt install ./antgain-cli_1.0.24-1_amd64.deb
 ```
 
 ## Requirements

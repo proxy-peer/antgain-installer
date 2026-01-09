@@ -54,8 +54,11 @@ else
         exit 1
     fi
     
-    # Extract version number
-    VERSION=$(echo "$VERSION_DATA" | grep -o '"version" *: *"[^"]*"' | cut -d'"' -f4)
+    # 提取版本号（兼容有无空格的 JSON 格式）
+    VERSION=$(echo "$VERSION_DATA" | grep -o '"version" *: *"[^"]*"' | head -1 | cut -d'"' -f4)
+    if [ -z "$VERSION" ]; then
+        VERSION=$(echo "$VERSION_DATA" | grep -o '"version":"[^"]*' | head -1 | cut -d'"' -f4)
+    fi
     
     if [ -z "$VERSION" ]; then
         echo "❌ Error: Unable to parse version information"
