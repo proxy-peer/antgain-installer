@@ -25,6 +25,22 @@ if ! command -v antgain &> /dev/null; then
     exit 1
 fi
 
+ANTGAIN_BIN="$(command -v antgain)"
+echo "✅ Found antgain at: $ANTGAIN_BIN"
+
+# Check if antgain is executable and compatible
+# We assume it supports --version or -V or similar, but just checking if it runs is enough.
+# If command fails, it might be due to output to stderr, so we silence it.
+if ! "$ANTGAIN_BIN" --version >/dev/null 2>&1; then
+    echo "⚠️ Warning: '$ANTGAIN_BIN --version' failed or timed out."
+    echo "   This might indicate an architecture mismatch (e.g. missing glibc or running x86_64 on arm)."
+    echo "   Continuing, but the service might fail to start."
+    # We don't exit here because some binaries might not have --version or exit 1 on unknown flag
+else
+    echo "✅ Binary verified executable."
+fi
+
+
 # Get API key from: 1. argument, 2. environment variable, 3. interactive input
 if [ -n "$1" ]; then
     ANTGAIN_API_KEY="$1"
@@ -67,7 +83,7 @@ if [ "$OS" = "Darwin" ]; then
     <string>${SERVICE_NAME}</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/local/bin/antgain</string>
+        <string>${ANTGAIN_BIN}</string>
     </array>
     <key>EnvironmentVariables</key>
     <dict>
@@ -118,7 +134,7 @@ Type=simple
 User=nobody
 Environment="ANTGAIN_API_KEY=${ANTGAIN_API_KEY}"
 Environment="LOG_LEVEL=info"
-ExecStart=/usr/local/bin/antgain
+ExecStart=${ANTGAIN_BIN}
 Restart=always
 RestartSec=10
 
