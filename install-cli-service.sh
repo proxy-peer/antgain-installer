@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# AntGain CLI Systemd Service Installer
+# AntGain CLI Service Installer
 # Usage: 
 #   curl -fsSL https://install.antgain.app/cli-service.sh | sudo bash
 #   curl -fsSL https://install.antgain.app/cli-service.sh | sudo bash -s YOUR_API_KEY
@@ -46,10 +46,69 @@ if [ -z "$ANTGAIN_API_KEY" ]; then
     exit 1
 fi
 
-echo "📦 Creating systemd service..."
+echo "📦 Configuring service..."
 
-# Create service file
-cat > /etc/systemd/system/antgain.service << EOF
+# Detect OS
+OS="$(uname -s)"
+SERVICE_NAME="app.antgain.cli"
+
+if [ "$OS" = "Darwin" ]; then
+    # macOS LaunchDaemon
+    PLIST_PATH="/Library/LaunchDaemons/${SERVICE_NAME}.plist"
+    
+    echo "🍎 Detected macOS. Creating LaunchDaemon at $PLIST_PATH"
+    
+    cat > "$PLIST_PATH" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>${SERVICE_NAME}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/antgain</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>ANTGAIN_API_KEY</key>
+        <string>${ANTGAIN_API_KEY}</string>
+        <key>LOG_LEVEL</key>
+        <string>info</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/var/log/antgain.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/antgain.error.log</string>
+</dict>
+</plist>
+EOF
+
+    # Set permissions
+    chown root:wheel "$PLIST_PATH"
+    chmod 644 "$PLIST_PATH"
+
+    # Load service
+    echo "🔄 Loading service..."
+    # Unload first just in case
+    launchctl unload "$PLIST_PATH" 2>/dev/null || true
+    launchctl load -w "$PLIST_PATH"
+
+    echo "✅ Service installed and started!"
+    echo ""
+    echo "Status:"
+    sudo launchctl list | grep antgain || echo "Service running (PID might vary)"
+
+elif [ "$OS" = "Linux" ]; then
+    # Linux Systemd
+    echo "🐧 Detected Linux. Creating systemd service..."
+
+    # Create service file
+    cat > /etc/systemd/system/antgain.service << EOF
 [Unit]
 Description=AntGain CLI Node
 After=network.target
@@ -67,31 +126,43 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-# Reload systemd
-echo "🔄 Reloading systemd..."
-systemctl daemon-reload
+    # Reload systemd
+    echo "🔄 Reloading systemd..."
+    systemctl daemon-reload
 
-# Enable service
-echo "✅ Enabling service..."
-systemctl enable antgain
+    # Enable service
+    echo "✅ Enabling service..."
+    systemctl enable antgain
 
-# Start service
-echo "🚀 Starting service..."
-systemctl start antgain
+    # Start service
+    echo "🚀 Starting service..."
+    systemctl start antgain
 
-# Wait a moment for service to start
-sleep 2
+    # Wait a moment for service to start
+    sleep 2
 
-# Show status
-echo ""
-echo "✅ Installation complete!"
-echo ""
-echo "Service status:"
-systemctl status antgain --no-pager -l || true
+    # Show status
+    echo ""
+    echo "✅ Installation complete!"
+    echo ""
+    echo "Service status:"
+    systemctl status antgain --no-pager -l || true
+
+else
+    echo "❌ Unsupported OS for service installation: $OS"
+    exit 1
+fi
+
 echo ""
 echo "Useful commands:"
-echo "  sudo systemctl status antgain   # Check status"
-echo "  sudo systemctl stop antgain     # Stop service"
-echo "  sudo systemctl start antgain    # Start service"
-echo "  sudo systemctl restart antgain  # Restart service"
-echo "  sudo journalctl -u antgain -f   # View logs"
+if [ "$OS" = "Darwin" ]; then
+    echo "  sudo launchctl load -w $PLIST_PATH    # Start/Enable"
+    echo "  sudo launchctl unload -w $PLIST_PATH  # Stop/Disable"
+    echo "  tail -f /var/log/antgain.log          # View logs"
+else
+    echo "  sudo systemctl status antgain   # Check status"
+    echo "  sudo systemctl stop antgain     # Stop service"
+    echo "  sudo systemctl start antgain    # Start service"
+    echo "  sudo systemctl restart antgain  # Restart service"
+    echo "  sudo journalctl -u antgain -f   # View logs"
+fi
