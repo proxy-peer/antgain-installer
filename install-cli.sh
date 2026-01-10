@@ -5,6 +5,7 @@ set -e
 # Usage: 
 #   curl -fsSL https://install.antgain.app/cli.sh | bash
 #   curl -fsSL https://install.antgain.app/cli.sh | bash -s 1.0.0
+#   curl -fsSL https://install.antgain.app/cli.sh | bash -s YOUR_API_KEY
 
 echo "🚀 AntGain CLI Installer"
 echo "================================"
@@ -50,38 +51,59 @@ echo "  OS: $OS_TYPE"
 echo "  Arch: $ARCH_TYPE"
 echo "  Key: $PLATFORM_KEY"
 
-# Fetch latest version info
-echo "📡 Fetching latest CLI version..."
-LATEST_JSON_URL="${R2_BASE_URL}/cli/latest.json"
+# Get version or API key from argument
+API_KEY=""
+VERSION=""
 
-VERSION_DATA=$(curl -fsSL "$LATEST_JSON_URL" 2>/dev/null || echo "")
-
-if [ -z "$VERSION_DATA" ]; then
-    echo "❌ Failed to fetch version info"
-    echo ""
-    echo "You can install manually from:"
-    echo "  https://github.com/proxy-peer/antgain/releases"
-    exit 1
+if [ -n "$1" ]; then
+    # Simple regex to check if it looks like a version number (v1.0.0 or 1.0.0)
+    if [[ "$1" =~ ^[vV]?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+        VERSION="$1"
+    else
+        API_KEY="$1"
+    fi
 fi
 
-# Extract URL for the specific platform
-# Strategy: Flatten JSON to single line, find "linux-amd64": { ... } and extract "url" value from it.
-# This grep pattern searches for the key, then matching braces up to the closing brace.
-# Note: This simple regex assumes the 'url' is within the same curly brace block and no nested braces.
-# We grep for: "KEY": *{ [any chars not }] }
-DOWNLOAD_URL=$(echo "$VERSION_DATA" | tr -d '\n' | grep -o "\"$PLATFORM_KEY\":[[:space:]]*{[^}]*}" | grep -o '"url":[[:space:]]*"[^"]*"' | head -1 | cut -d'"' -f4)
+if [ -n "$VERSION" ]; then
+    echo "🎯 Target Version: $VERSION"
+elif [ -z "$VERSION" ]; then
+    # Fetch latest version
+    echo "📡 Fetching latest CLI version..."
+    LATEST_JSON_URL="${R2_BASE_URL}/cli/latest.json"
 
-# Fallback extraction: extract the first version number found
-# robust regex allows for spaces
-VERSION=$(echo "$VERSION_DATA" | tr -d '\n' | grep -o '"version":[[:space:]]*"[^"]*"' | head -1 | cut -d'"' -f4)
+    VERSION_DATA=$(curl -fsSL "$LATEST_JSON_URL" 2>/dev/null || echo "")
+    
+    if [ -z "$VERSION_DATA" ]; then
+        echo "❌ Failed to fetch version info"
+        echo ""
+        echo "You can install manually from:"
+        echo "  https://github.com/proxy-peer/antgain/releases"
+        exit 1
+    fi
+    
+    # Extract URL for the specific platform
+    # Strategy: Flatten JSON to single line, find "linux-amd64": { ... } and extract "url" value from it.
+    # We grep for: "KEY": *{ [any chars not }] }
+    DOWNLOAD_URL=$(echo "$VERSION_DATA" | tr -d '\n' | grep -o "\"$PLATFORM_KEY\":[[:space:]]*{[^}]*}" | grep -o '"url":[[:space:]]*"[^"]*"' | head -1 | cut -d'"' -f4)
 
-if [ -z "$DOWNLOAD_URL" ]; then
-    echo "❌ Could not find a download URL for platform: $PLATFORM_KEY"
-    echo "Available keys might be different currently."
-    exit 1
+    # Fallback extraction: extract the first version number found
+    VERSION=$(echo "$VERSION_DATA" | tr -d '\n' | grep -o '"version":[[:space:]]*"[^"]*"' | head -1 | cut -d'"' -f4)
+
+    if [ -z "$DOWNLOAD_URL" ]; then
+        echo "❌ Could not find a download URL for platform: $PLATFORM_KEY"
+        echo "Available keys might be different currently."
+        exit 1
+    fi
 fi
 
 echo "📦 Found version: $VERSION"
+
+if [ -z "$DOWNLOAD_URL" ]; then
+    # If version specified manually, construct URL
+    FILENAME="antgain-${OS_TYPE}-${ARCH_TYPE}.tar.gz"
+    DOWNLOAD_URL="${R2_BASE_URL}/cli/releases/${VERSION}/${FILENAME}"
+fi
+
 echo "📥 Downloading from: $DOWNLOAD_URL"
 
 # Download
@@ -132,10 +154,24 @@ rm -rf "$TMP_DIR"
 
 echo "✅ Installation successful!"
 echo ""
-echo "Usage:"
-echo "  antgain --api-key YOUR_API_KEY"
-echo ""
-echo "Get your API key from: https://antgain.app/dashboard/settings"
-echo ""
-echo "Run as systemd service:"
-echo "  curl -fsSL https://raw.githubusercontent.com/proxy-peer/antgain-installer/main/install.sh | sudo bash -s YOUR_API_KEY"
+
+if [ -n "$API_KEY" ]; then
+    echo "🔑 API Key detected. Setting up systemd service..."
+    # URL for service installer
+    SERVICE_INSTALLER_URL="https://raw.githubusercontent.com/proxy-peer/antgain-installer/main/install-cli-service.sh"
+    
+    echo "📥 Fetching service installer..."
+    if [ "$EUID" -ne 0 ]; then
+        curl -fsSL "$SERVICE_INSTALLER_URL" | sudo bash -s "$API_KEY"
+    else
+        curl -fsSL "$SERVICE_INSTALLER_URL" | bash -s "$API_KEY"
+    fi
+else
+    echo "Usage:"
+    echo "  antgain --api-key YOUR_API_KEY"
+    echo ""
+    echo "Get your API key from: https://antgain.app/dashboard/settings"
+    echo ""
+    echo "Run as systemd service:"
+    echo "  curl -fsSL https://raw.githubusercontent.com/proxy-peer/antgain-installer/main/install-cli-service.sh | sudo bash -s YOUR_API_KEY"
+fi
